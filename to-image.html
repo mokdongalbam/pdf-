@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF to JPG - Convert PDF pages to high quality images</title>
+    <!-- pdf.js 라이브러리 로드 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
+    <!-- JSZip (여러 이미지를 한 번에 묶어서 다운로드하기 위함) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        :root {
+            --primary: #fbbf24; /* PDF to JPG 컬러 (앰버/노란색) */
+            --primary-hover: #f59e0b;
+            --bg-color: #f8fafc;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+
+        body { background-color: var(--bg-color); color: var(--text-main); }
+
+        nav { padding: 20px; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        nav a { text-decoration: none; color: var(--text-main); font-weight: 600; font-size: 18px; }
+
+        .container { max-width: 800px; margin: 50px auto; padding: 20px; text-align: center; }
+
+        h1 { font-size: 2.5rem; margin-bottom: 10px; color: var(--text-main); }
+        p.desc { color: var(--text-muted); font-size: 1.1rem; margin-bottom: 40px; }
+
+        .upload-area {
+            border: 3px dashed #cbd5e1; border-radius: 20px; padding: 60px 20px;
+            background-color: white; cursor: pointer; transition: all 0.3s; position: relative;
+        }
+
+        .upload-area:hover, .upload-area.dragover { border-color: var(--primary); background-color: #fffbeb; }
+        .upload-area input[type="file"] { position: absolute; width: 100%; height: 100%; top: 0; left: 0; opacity: 0; cursor: pointer; }
+
+        .btn-select {
+            background-color: var(--primary); color: white; padding: 15px 30px;
+            border-radius: 12px; border: none; font-size: 1.2rem; font-weight: 600;
+            margin-top: 20px; cursor: pointer; display: inline-block; color: #78350f;
+        }
+
+        /* 옵션 영역 */
+        #convert-options {
+            margin-top: 30px; background: white; padding: 30px;
+            border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            display: none; text-align: left;
+        }
+
+        .file-info { font-weight: 600; color: #b45309; margin-bottom: 20px; font-size: 1.1rem; }
+
+        #convert-btn {
+            background-color: var(--primary); color: #78350f; width: 100%;
+            padding: 18px; border: none; border-radius: 12px; font-size: 1.2rem;
+            font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(251, 191, 36, 0.4);
+            transition: 0.3s;
+        }
+        #convert-btn:hover { background-color: var(--primary-hover); }
+
+        #loading-area { display: none; margin-top: 20px; text-align: center; }
+        .progress-text { font-weight: bold; color: #b45309; margin-bottom: 10px; }
+        
+        .progress-bar-container {
+            width: 100%; background-color: #f1f5f9; border-radius: 10px; overflow: hidden; height: 10px;
+        }
+        .progress-bar { width: 0%; height: 100%; background-color: var(--primary); transition: width 0.3s; }
+        
+    </style>
+</head>
+<body>
+
+    <nav>
+        <a href="index.html">← Back to Home</a>
+    </nav>
+
+    <div class="container">
+        <h1>PDF to JPG</h1>
+        <p class="desc">Convert each page of your PDF into high-quality JPG images instantly.</p>
+
+        <!-- 파일 업로드 영역 -->
+        <div class="upload-area" id="drop-zone">
+            <input type="file" id="file-input" accept="application/pdf">
+            <svg style="width:64px;height:64px;color:#cbd5e1;margin-bottom:15px" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+            <h2>Select PDF file</h2>
+            <p style="color: #94a3b8; margin-top: 5px;">or drop PDF here</p>
+            <div class="btn-select">Select PDF</div>
+        </div>
+
+        <!-- 변환 옵션 영역 -->
+        <div id="convert-options">
+            <div class="file-info" id="file-info">Selected: -</div>
+            <p style="margin-bottom: 20px; color: var(--text-muted);">
+                Each page of the PDF will be converted to a JPG. <br>If there are multiple pages, they will be downloaded as a ZIP file.
+            </p>
+            <button id="convert-btn">Convert to JPG</button>
+            
+            <div id="loading-area">
+                <div class="progress-text" id="progress-text">Converting: 0%</div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar" id="progress-bar"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('file-input');
+        const dropZone = document.getElementById('drop-zone');
+        const convertOptions = document.getElementById('convert-options');
+        const fileInfo = document.getElementById('file-info');
+        const convertBtn = document.getElementById('convert-btn');
+        const loadingArea = document.getElementById('loading-area');
+        const progressText = document.getElementById('progress-text');
+        const progressBar = document.getElementById('progress-bar');
+
+        let selectedFile = null;
+        let originalFileName = "";
+
+        // 1. 파일 업로드 처리
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                selectedFile = e.target.files[0];
+                if (selectedFile.type !== "application/pdf") return alert("Please select a valid PDF file.");
+                
+                originalFileName = selectedFile.name.replace('.pdf', '');
+                fileInfo.textContent = `Selected: ${selectedFile.name}`;
+                
+                dropZone.style.display = 'none';
+                convertOptions.style.display = 'block';
+            }
+        });
+
+        // 2. 변환 시작
+        convertBtn.addEventListener('click', async () => {
+            convertBtn.style.display = 'none';
+            loadingArea.style.display = 'block';
+            
+            try {
+                // FileReader로 PDF 읽기
+                const arrayBuffer = await selectedFile.arrayBuffer();
+                
+                // PDF.js로 문서 로드
+                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                const totalPages = pdf.numPages;
+                
+                const zip = new JSZip(); // 여러 장일 경우 묶을 ZIP 객체
+
+                for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+                    // 진행률 업데이트
+                    const percent = Math.round(((pageNum - 1) / totalPages) * 100);
+                    progressText.textContent = `Converting page ${pageNum} of ${totalPages} (${percent}%)`;
+                    progressBar.style.width = `${percent}%`;
+
+                    // 페이지 로드
+                    const page = await pdf.getPage(pageNum);
+                    
+                    // 고화질을 위해 스케일(해상도) 높임 (2 = 200%)
+                    const viewport = page.getViewport({ scale: 2.0 });
+                    
+                    // 숨겨진 캔버스 생성
+                    const canvas = document.createElement('canvas');
+                    const context = canvas.getContext('2d');
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+
+                    // 캔버스에 PDF 페이지 그리기
+                    await page.render({ canvasContext: context, viewport: viewport }).promise;
+
+                    // 캔버스를 base64 이미지 데이터(JPG)로 변환 (품질 0.9)
+                    const imgData = canvas.toDataURL('image/jpeg', 0.9);
+                    
+                    if (totalPages === 1) {
+                        // 1장짜리 문서면 바로 JPG 다운로드
+                        downloadSingleImage(imgData, `${originalFileName}.jpg`);
+                    } else {
+                        // 여러 장이면 ZIP 파일에 추가 (base64 헤더 제거 후 추가)
+                        const base64Data = imgData.split(',')[1];
+                        zip.file(`${originalFileName}_page_${pageNum}.jpg`, base64Data, {base64: true});
+                    }
+                }
+
+                // 여러 장일 경우 ZIP 생성 후 다운로드
+                if (totalPages > 1) {
+                    progressText.textContent = "Zipping images...";
+                    progressBar.style.width = "100%";
+                    
+                    const content = await zip.generateAsync({ type: "blob" });
+                    
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(content);
+                    link.download = `${originalFileName}_images.zip`;
+                    link.click();
+                }
+
+                progressText.textContent = "Done!";
+
+            } catch (error) {
+                console.error(error);
+                alert("An error occurred during conversion.");
+            } finally {
+                setTimeout(() => {
+                    convertBtn.style.display = 'block';
+                    loadingArea.style.display = 'none';
+                    progressBar.style.width = "0%";
+                }, 2000);
+            }
+        });
+
+        function downloadSingleImage(dataUrl, filename) {
+            const link = document.createElement('a');
+            link.href = dataUrl;
+            link.download = filename;
+            link.click();
+        }
+
+        // 드래그 앤 드롭 이벤트
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault(); dropZone.classList.remove('dragover');
+            fileInput.files = e.dataTransfer.files;
+            fileInput.dispatchEvent(new Event('change'));
+        });
+    </script>
+</body>
+</html>
