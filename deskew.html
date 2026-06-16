@@ -23,16 +23,28 @@
         h1 { font-size: 2.5rem; margin-bottom: 10px; }
         p.desc { color: #64748b; font-size: 1.1rem; margin-bottom: 30px; }
 
-        .upload-area { border: 3px dashed #cbd5e1; border-radius: 20px; padding: 60px 20px; background: white; cursor: pointer; transition: 0.3s; }
-        .upload-area:hover { border-color: var(--primary); background: #f0f9ff; }
-        .upload-area input { display: none; }
-        .btn-select { background-color: var(--primary); color: white; padding: 15px 30px; border-radius: 12px; border: none; font-size: 1.2rem; font-weight: 600; cursor: pointer; margin-top: 20px; display: inline-block; }
+        /* 업로드 영역 수정 */
+        .upload-area { 
+            border: 3px dashed #cbd5e1; border-radius: 20px; padding: 60px 20px; 
+            background: white; transition: 0.3s; position: relative;
+        }
+        .upload-area:hover, .upload-area.dragover { border-color: var(--primary); background: #f0f9ff; }
+        
+        /* 파일 인풋을 투명하게 덮어버림 (클릭과 드래그 모두 해결하는 최고 방법) */
+        .upload-area input[type="file"] {
+            position: absolute; width: 100%; height: 100%; top: 0; left: 0; 
+            opacity: 0; cursor: pointer; z-index: 10;
+        }
+        
+        .btn-select { 
+            background-color: var(--primary); color: white; padding: 15px 30px; 
+            border-radius: 12px; border: none; font-size: 1.2rem; font-weight: 600; 
+            margin-top: 20px; display: inline-block; pointer-events: none; /* 클릭 방해 금지 */
+        }
 
         #process-area { display: none; background: white; padding: 40px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-top: 30px; }
-        
         .file-info { font-size: 1.2rem; font-weight: 600; margin-bottom: 20px; color: var(--primary); }
         
-        /* 진행률 표시바 */
         .progress-container { width: 100%; background-color: #e2e8f0; border-radius: 10px; height: 12px; overflow: hidden; margin-bottom: 15px; }
         #progress-bar { height: 100%; background-color: var(--primary); width: 0%; transition: width 0.3s; }
         #status-text { font-weight: 600; color: #475569; }
@@ -51,16 +63,16 @@
         <h1>Auto Deskew PDF</h1>
         <p class="desc">Our AI algorithm detects and straightens every crooked page automatically.</p>
 
-        <div class="upload-area" id="drop-zone" onclick="document.getElementById('file-input').click()">
+        <!-- 드래그 & 클릭 영역 완벽 통합 -->
+        <div class="upload-area" id="drop-zone">
             <input type="file" id="file-input" accept="application/pdf">
-            <svg style="width:64px;height:64px;color:#cbd5e1;margin-bottom:15px" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-            <h2>Select Scanned PDF</h2>
+            <svg style="width:64px;height:64px;color:#cbd5e1;margin-bottom:15px;pointer-events:none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+            <h2 style="pointer-events:none">Select Scanned PDF</h2>
             <div class="btn-select">Select PDF</div>
         </div>
 
         <div id="process-area">
             <div class="file-info" id="file-name-display">Selected: -</div>
-            
             <button id="auto-deskew-btn">Start Auto-Deskew</button>
 
             <div id="loading-section" style="display: none; margin-top: 20px;">
@@ -73,6 +85,7 @@
 
     <script>
         const fileInput = document.getElementById('file-input');
+        const dropZone = document.getElementById('drop-zone');
         const processArea = document.getElementById('process-area');
         const fileNameDisplay = document.getElementById('file-name-display');
         const autoDeskewBtn = document.getElementById('auto-deskew-btn');
@@ -83,32 +96,58 @@
 
         let loadedFile = null;
 
-        fileInput.addEventListener('change', (e) => {
-            if (e.target.files.length > 0) {
-                loadedFile = e.target.files[0];
-                if (loadedFile.type !== "application/pdf") return alert("Please select a PDF.");
+        // 파일 업로드 처리 함수 통합
+        function handleFile(files) {
+            if (files.length > 0) {
+                const file = files[0];
+                if (file.type !== "application/pdf") return alert("Please select a PDF file.");
                 
-                document.getElementById('drop-zone').style.display = 'none';
+                loadedFile = file;
+                dropZone.style.display = 'none';
                 processArea.style.display = 'block';
-                fileNameDisplay.textContent = `Selected: ${loadedFile.name}`;
+                fileNameDisplay.textContent = `Selected: ${file.name}`;
             }
+        }
+
+        // 1. 클릭으로 파일 선택 시
+        fileInput.addEventListener('change', (e) => {
+            handleFile(e.target.files);
         });
 
-        // 텍스트 라인의 투영(Projection) 프로파일을 기반으로 최적의 각도를 찾는 알고리즘
+        // 2. 드래그 앤 드롭 시
+        dropZone.addEventListener('dragover', (e) => { 
+            e.preventDefault(); 
+            dropZone.classList.add('dragover'); 
+        });
+        
+        dropZone.addEventListener('dragleave', (e) => { 
+            e.preventDefault(); 
+            dropZone.classList.remove('dragover'); 
+        });
+        
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault(); 
+            dropZone.classList.remove('dragover');
+            
+            // 파일 덮어쓰기 및 트리거 발생
+            fileInput.files = e.dataTransfer.files;
+            handleFile(e.dataTransfer.files);
+        });
+
+        // ==========================================
+        // 이하 Auto Deskew 분석 및 회전 알고리즘 (동일)
+        // ==========================================
+
         function detectSkewAngle(imageData, width, height) {
-            // 연산 속도를 위해 해상도를 낮춤
             const scale = 0.5;
             const w = Math.floor(width * scale);
             const h = Math.floor(height * scale);
             
-            // 이미지 흑백화 및 대비 강화 배열 생성
             const pixels = new Uint8Array(w * h);
             for (let y = 0; y < h; y++) {
                 for (let x = 0; x < w; x++) {
                     const idx = (Math.floor(y / scale) * width + Math.floor(x / scale)) * 4;
-                    // R, G, B 평균으로 흑백 구함
                     const gray = (imageData[idx] + imageData[idx+1] + imageData[idx+2]) / 3;
-                    // 글자(검은색)면 1, 배경(흰색)이면 0 (역치값 128)
                     pixels[y * w + x] = gray < 128 ? 1 : 0;
                 }
             }
@@ -116,16 +155,12 @@
             let bestAngle = 0;
             let maxVariance = 0;
 
-            // -10도에서 +10도 사이를 0.5도 단위로 탐색
             for (let angle = -10; angle <= 10; angle += 0.5) {
                 const theta = angle * Math.PI / 180;
                 const cosT = Math.cos(theta);
                 const sinT = Math.sin(theta);
-                
-                // 가상의 수평선 프로파일
                 const profile = new Int32Array(h);
 
-                // 이미지를 가상으로 회전시키면서 선에 걸리는 글자(검은 픽셀) 개수 세기
                 for (let y = 0; y < h; y++) {
                     for (let x = 0; x < w; x++) {
                         if (pixels[y * w + x]) {
@@ -137,7 +172,6 @@
                     }
                 }
 
-                // 텍스트 라인이 일치할수록 프로파일의 분산(Variance)이 극대화됨
                 let sum = 0, sqSum = 0;
                 for (let i = 0; i < h; i++) {
                     sum += profile[i];
@@ -151,8 +185,6 @@
                     bestAngle = angle;
                 }
             }
-            
-            // 글자가 없는 빈 페이지이거나 차이가 미미하면 0 반환
             return maxVariance > 10 ? -bestAngle : 0; 
         }
 
@@ -171,25 +203,20 @@
             try {
                 const arrayBuffer = await loadedFile.arrayBuffer();
                 
-                // 1. pdf.js로 분석용 데이터 로드
                 const pdfPreview = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
                 const totalPages = pdfPreview.numPages;
                 
-                // 2. pdf-lib으로 편집용 문서 로드
                 const originalPdf = await PDFLib.PDFDocument.load(arrayBuffer);
                 const newPdf = await PDFLib.PDFDocument.create();
                 const pagesToEdit = originalPdf.getPages();
 
-                // 3. 페이지별로 분석 및 수정 진행
                 for (let i = 1; i <= totalPages; i++) {
-                    // 진행률 업데이트
                     const percent = Math.round(((i - 1) / totalPages) * 100);
                     progressBar.style.width = `${percent}%`;
                     statusText.textContent = `Analyzing page ${i} of ${totalPages}...`;
                     
-                    // --- 분석 단계 (pdf.js) ---
                     const page = await pdfPreview.getPage(i);
-                    const viewport = page.getViewport({ scale: 1.0 }); // 분석용 1배율
+                    const viewport = page.getViewport({ scale: 1.0 }); 
                     const canvas = document.createElement('canvas');
                     const ctx = canvas.getContext('2d');
                     canvas.width = viewport.width; canvas.height = viewport.height;
@@ -197,66 +224,7 @@
                     await page.render({ canvasContext: ctx, viewport: viewport }).promise;
                     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
                     
-                    // 알고리즘으로 각도 추적
                     const detectedAngle = detectSkewAngle(imageData, canvas.width, canvas.height);
                     logInfo(`Page ${i}: Detected skew angle = ${detectedAngle}°`);
 
-                    // --- 수정 단계 (pdf-lib) ---
-                    // NAPS2 방식의 Bounding Box 확장 회전
-                    const embeddedPage = await newPdf.embedPage(pagesToEdit[i-1]);
-                    const { width: origW, height: origH } = embeddedPage.scale(1);
-                    
-                    const theta = detectedAngle * (Math.PI / 180);
-                    const cosT = Math.abs(Math.cos(theta));
-                    const sinT = Math.abs(Math.sin(theta));
-
-                    const newWidth = origW * cosT + origH * sinT;
-                    const newHeight = origW * sinT + origH * cosT;
-                    
-                    const newPage = newPdf.addPage([newWidth, newHeight]);
-
-                    newPage.drawPage(embeddedPage, {
-                        x: newWidth / 2,
-                        y: newHeight / 2,
-                        xOrigin: 0.5,
-                        yOrigin: 0.5,
-                        rotate: PDFLib.degrees(detectedAngle),
-                    });
-                }
-
-                // 4. 완료 및 다운로드
-                progressBar.style.width = '100%';
-                statusText.textContent = "Processing complete! Downloading...";
-                logInfo("Generating finalized PDF file...");
-
-                const pdfBytes = await newPdf.save();
-                const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(blob);
-                link.download = `auto_deskewed_${loadedFile.name}`;
-                link.click();
-
-            } catch (error) {
-                console.error(error);
-                alert("An error occurred during the auto-deskew process.");
-                logInfo(`<span style="color:red">Error: ${error.message}</span>`);
-            } finally {
-                setTimeout(() => {
-                    autoDeskewBtn.style.display = 'block';
-                    loadingSection.style.display = 'none';
-                    progressBar.style.width = '0%';
-                }, 3000);
-            }
-        });
-
-        // 드래그 앤 드롭 업로드
-        document.getElementById('drop-zone').addEventListener('dragover', (e) => { e.preventDefault(); e.currentTarget.style.borderColor = "var(--primary)"; });
-        document.getElementById('drop-zone').addEventListener('dragleave', (e) => e.currentTarget.style.borderColor = "#cbd5e1");
-        document.getElementById('drop-zone').addEventListener('drop', (e) => {
-            e.preventDefault(); e.currentTarget.style.borderColor = "#cbd5e1";
-            fileInput.files = e.dataTransfer.files;
-            fileInput.dispatchEvent(new Event('change'));
-        });
-    </script>
-</body>
-</html>
+                    const embeddedPage =
