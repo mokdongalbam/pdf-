@@ -3,55 +3,244 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Auto Deskew PDF Online</title>
+    <title>Auto Deskew PDF - Straighten Scanned Documents</title>
+    <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
     <style>
-        body { font-family: Arial, sans-serif; padding: 30px; max-width: 600px; margin: auto; }
-        .upload-box { border: 2px dashed #cbd5e1; padding: 30px; text-align: center; border-radius: 10px; }
-        button { margin-top: 15px; padding: 10px 20px; font-size: 16px; background: #2563eb; color: white; border: none; border-radius: 5px; cursor: pointer; }
-        button:disabled { background: #9ca3af; cursor: not-allowed; }
-        #status { margin-top: 15px; font-weight: bold; color: #475569; }
-        .loader { display: none; margin: 10px auto; border: 4px solid #f3f3f3; border-top: 4px solid #2563eb; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; }
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Pretendard', -apple-system, sans-serif;
+            background-color: #f7f9fc;
+            margin: 0;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* Top Navigation */
+        nav {
+            background-color: #ffffff;
+            padding: 15px 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        nav a {
+            text-decoration: none;
+            color: #1e293b;
+            font-weight: 700;
+            font-size: 1.2rem;
+            display: inline-flex;
+            align-items: center;
+        }
+        nav a svg {
+            width: 24px;
+            height: 24px;
+            margin-right: 8px;
+            fill: #1e293b;
+        }
+
+        /* Main Content Area */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        .main-content h1 {
+            font-size: 2.5rem;
+            color: #1e293b;
+            margin-bottom: 10px;
+            font-weight: 800;
+        }
+        .main-content p.subtitle {
+            font-size: 1.1rem;
+            color: #64748b;
+            margin-bottom: 40px;
+        }
+
+        /* Upload Workspace */
+        .workspace {
+            background-color: #ffffff;
+            width: 100%;
+            max-width: 600px;
+            padding: 50px 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            border: 2px dashed #cbd5e1;
+            transition: all 0.3s ease;
+        }
+        .workspace:hover {
+            border-color: #f43f5e; /* I Love PDF Red theme on hover */
+            background-color: #fff1f2; /* Light Red Pastel */
+        }
+
+        /* Custom File Input Styling */
+        input[type="file"] {
+            display: none;
+        }
+        .file-label {
+            display: inline-block;
+            background-color: #e11d48; /* Premium Red */
+            color: white;
+            font-size: 1.2rem;
+            font-weight: 700;
+            padding: 20px 40px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(225, 29, 72, 0.2);
+        }
+        .file-label:hover {
+            background-color: #be123c;
+        }
+
+        #fileName {
+            display: block;
+            margin-top: 10px;
+            font-size: 1rem;
+            color: #475569;
+            font-weight: bold;
+            word-break: break-all;
+        }
+
+        .process-btn {
+            display: none; /* Hidden until file is selected */
+            margin-top: 20px;
+            background-color: #10b981; /* Green success color */
+            color: white;
+            font-size: 1.1rem;
+            font-weight: bold;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2);
+        }
+        .process-btn:hover {
+            background-color: #059669;
+        }
+        .process-btn:disabled {
+            background-color: #9ca3af;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        /* Status & Security Messages */
+        #status {
+            margin-top: 20px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: #475569;
+        }
+        .security-badge {
+            margin-top: 30px;
+            display: inline-flex;
+            align-items: center;
+            color: #64748b;
+            font-size: 0.9rem;
+            background-color: #f8fafc;
+            padding: 8px 16px;
+            border-radius: 50px;
+            border: 1px solid #e2e8f0;
+        }
+        .security-badge svg {
+            width: 16px; height: 16px;
+            margin-right: 6px; fill: #10b981;
+        }
+
+        /* Loading Spinner */
+        .loader { 
+            display: none; 
+            margin: 20px auto 0; 
+            border: 4px solid #f3f3f3; 
+            border-top: 4px solid #e11d48; 
+            border-radius: 50%; 
+            width: 40px; 
+            height: 40px; 
+            animation: spin 1s linear infinite; 
+        }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .back-link { display: inline-block; margin-bottom: 20px; color: #2563eb; text-decoration: none; font-weight: bold; }
-        .back-link:hover { text-decoration: underline; }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
     </style>
 </head>
 <body>
 
-    <a href="index.html" class="back-link">← Back to Home</a>
-    <h2>Auto Deskew PDF</h2>
-    <div class="upload-box">
-        <input type="file" id="pdfInput" accept="application/pdf" />
-        <br/>
-        <button id="processBtn">Upload & Process</button>
-        <div class="loader" id="loader"></div>
-        <div id="status">Please select a PDF file. (Multiple pages supported)</div>
+    <nav>
+        <a href="index.html">
+            <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+            Home
+        </a>
+    </nav>
+
+    <div class="main-content">
+        <h1>Auto Deskew PDF</h1>
+        <p class="subtitle">Automatically straighten and level your scanned PDF documents.</p>
+
+        <div class="workspace" id="dropZone">
+            <!-- File Input Label -->
+            <label for="pdfInput" class="file-label">Select PDF file</label>
+            <input type="file" id="pdfInput" accept="application/pdf" />
+            
+            <div id="fileName">or drop PDF here</div>
+            
+            <button id="processBtn" class="process-btn">Straighten PDF Now</button>
+            <div class="loader" id="loader"></div>
+            <div id="status"></div>
+
+            <!-- Security Message -->
+            <div class="security-badge">
+                <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+                Secure processing. Files are never stored on any server.
+            </div>
+        </div>
     </div>
 
+    <footer>
+        &copy; 2026 Free PDF Tools. All rights reserved.
+    </footer>
+
     <script>
-        document.getElementById('processBtn').addEventListener('click', async () => {
-            const fileInput = document.getElementById('pdfInput');
-            const file = fileInput.files[0];
-            
-            if (!file) {
-                alert("Please select a PDF file first.");
-                return;
+        const fileInput = document.getElementById('pdfInput');
+        const fileNameDisplay = document.getElementById('fileName');
+        const processBtn = document.getElementById('processBtn');
+        const statusEl = document.getElementById('status');
+        const loader = document.getElementById('loader');
+
+        // File Selection Logic
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                fileNameDisplay.innerText = "Selected: " + e.target.files[0].name;
+                processBtn.style.display = "inline-block"; // Show the process button
+                statusEl.innerText = "";
             }
+        });
 
-            const statusEl = document.getElementById('status');
-            const loader = document.getElementById('loader');
-            const btn = document.getElementById('processBtn');
+        // Processing Logic
+        processBtn.addEventListener('click', async () => {
+            const file = fileInput.files[0];
+            if (!file) return;
 
-            btn.disabled = true;
+            processBtn.disabled = true;
             loader.style.display = 'block';
-            statusEl.innerText = "Processing on server... (It may take about 1 minute on first run due to cold start.)";
+            statusEl.innerText = "Processing... (It may take about a minute if the server is waking up)";
             statusEl.style.color = "#475569";
 
             const formData = new FormData();
             formData.append("file", file);
 
             try {
-                // 회원님의 Render 주소
+                // 회원님의 Render API 주소
                 const apiUrl = 'https://pdf-backend-oylp.onrender.com/api/deskew'; 
 
                 const response = await fetch(apiUrl, {
@@ -59,27 +248,52 @@
                     body: formData
                 });
 
-                if (!response.ok) throw new Error("Server processing failed");
+                if (!response.ok) throw new Error("Server error");
 
                 const blob = await response.blob();
                 const downloadUrl = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = downloadUrl;
-                a.download = `deskewed_${file.name}`;
+                a.download = `straightened_${file.name}`;
                 document.body.appendChild(a);
                 a.click();
                 a.remove();
                 window.URL.revokeObjectURL(downloadUrl);
 
-                statusEl.innerText = "Success! Your file has been downloaded.";
-                statusEl.style.color = "#16a34a"; 
+                statusEl.innerText = "Success! Your document has been straightened.";
+                statusEl.style.color = "#10b981"; // Success Green
+                processBtn.style.display = "none"; // Hide button after success
+                fileNameDisplay.innerText = "Want to process another file?";
             } catch (error) {
                 console.error(error);
-                statusEl.innerText = "An error occurred. The server might be waking up, please try again in 1 minute.";
-                statusEl.style.color = "#dc2626"; 
+                statusEl.innerText = "An error occurred. The server might be asleep, please try again in 1 minute.";
+                statusEl.style.color = "#e11d48"; // Error Red
             } finally {
-                btn.disabled = false;
+                processBtn.disabled = false;
                 loader.style.display = 'none';
+            }
+        });
+
+        // Simple Drag and Drop (Visual effect only for now)
+        const dropZone = document.getElementById('dropZone');
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+        });
+        function preventDefaults(e) { e.preventDefault(); e.stopPropagation(); }
+        
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.style.backgroundColor = '#fff1f2', false);
+        });
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.style.backgroundColor = '#ffffff', false);
+        });
+        
+        dropZone.addEventListener('drop', (e) => {
+            let dt = e.dataTransfer;
+            let files = dt.files;
+            if (files.length > 0 && files[0].type === "application/pdf") {
+                fileInput.files = files;
+                fileInput.dispatchEvent(new Event('change'));
             }
         });
     </script>
