@@ -1,193 +1,85 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PDF Tools - Edit & Convert PDFs Online Free</title>
+    <title>PDF 자동 수평 맞춤</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-
-        :root {
-            --bg-color: #f8fafc;
-            --primary: #8b5cf6; /* Pastel Purple */
-            --primary-hover: #7c3aed;
-            --card-bg: #ffffff;
-            --text-main: #1e293b;
-            --text-muted: #64748b;
-            
-            /* Tool Card Colors */
-            --color-merge: #fb7185;
-            --color-split: #f472b6;
-            --color-deskew: #38bdf8;
-            --color-protect: #34d399;
-            --color-convert: #fbbf24;
-            --color-watermark: #818cf8;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Inter', sans-serif;
-        }
-
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            line-height: 1.6;
-        }
-
-        /* Header / Hero Section */
-        header {
-            background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
-            padding: 80px 20px;
-            text-align: center;
-        }
-
-        header h1 {
-            font-size: 3rem;
-            font-weight: 800;
-            color: #1e293b;
-            margin-bottom: 16px;
-        }
-
-        header p {
-            font-size: 1.25rem;
-            color: #334155;
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        /* Grid Section */
-        .container {
-            max-width: 1200px;
-            margin: -40px auto 40px auto;
-            padding: 0 20px;
-        }
-
-        .tools-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 24px;
-        }
-
-        /* Tool Card Design */
-        .tool-card {
-            background-color: var(--card-bg);
-            border-radius: 16px;
-            padding: 30px 24px;
-            text-decoration: none;
-            color: inherit;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-            transition: all 0.3s ease;
-            display: flex;
-            flex-direction: column;
-            border-top: 5px solid #ccc;
-        }
-
-        .tool-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-        }
-
-        .tool-card:nth-child(1) { border-color: var(--color-merge); }
-        .tool-card:nth-child(2) { border-color: var(--color-split); }
-        .tool-card:nth-child(3) { border-color: var(--color-deskew); }
-        .tool-card:nth-child(4) { border-color: var(--color-protect); }
-        .tool-card:nth-child(5) { border-color: var(--color-convert); }
-        .tool-card:nth-child(6) { border-color: var(--color-watermark); }
-
-        .icon {
-            font-size: 2.5rem;
-            margin-bottom: 16px;
-        }
-
-        .tool-title {
-            font-size: 1.25rem;
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
-
-        .tool-desc {
-            color: var(--text-muted);
-            font-size: 0.95rem;
-            line-height: 1.5;
-        }
-
-        /* Trust Badge Section */
-        .trust-section {
-            text-align: center;
-            padding: 40px 20px 60px;
-            color: var(--text-muted);
-            font-size: 0.9rem;
-        }
-        
-        .trust-section span {
-            display: inline-block;
-            background-color: #e2e8f0;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-weight: 600;
-        }
+        body { font-family: Arial, sans-serif; padding: 30px; max-width: 600px; margin: auto; }
+        .upload-box { border: 2px dashed #cbd5e1; padding: 30px; text-align: center; border-radius: 10px; }
+        button { margin-top: 15px; padding: 10px 20px; font-size: 16px; background: #2563eb; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:disabled { background: #9ca3af; cursor: not-allowed; }
+        #status { margin-top: 15px; font-weight: bold; color: #475569; }
+        .loader { display: none; margin: 10px auto; border: 4px solid #f3f3f3; border-top: 4px solid #2563eb; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
-    <header>
-        <h1>Every tool you need to work with PDFs</h1>
-        <p>100% Free, Secure, and Client-side processing. Your files never leave your device.</p>
-    </header>
-
-    <div class="container">
-        <div class="tools-grid">
-            <!-- 1. Merge PDF -->
-            <a href="merge.html" class="tool-card">
-                <div class="icon">📑</div>
-                <h2 class="tool-title">Merge PDF</h2>
-                <p class="tool-desc">Combine multiple PDFs and images into a single document.</p>
-            </a>
-
-            <!-- 2. Split PDF -->
-            <a href="split.html" class="tool-card">
-                <div class="icon">✂️</div>
-                <h2 class="tool-title">Split PDF</h2>
-                <p class="tool-desc">Separate one page or a whole set for easy conversion.</p>
-            </a>
-
-            <!-- 3. Deskew (수평/수직 맞추기) -->
-            <a href="deskew.html" class="tool-card">
-                <div class="icon">📐</div>
-                <h2 class="tool-title">Deskew Scans</h2>
-                <p class="tool-desc">Automatically straighten and align scanned PDF pages.</p>
-            </a>
-
-            <!-- 4. Protect PDF -->
-            <a href="protect.html" class="tool-card">
-                <div class="icon">🔒</div>
-                <h2 class="tool-title">Protect PDF</h2>
-                <p class="tool-desc">Encrypt your PDF with a password to prevent unauthorized access.</p>
-            </a>
-
-            <!-- 5. PDF to Image -->
-            <a href="to-image.html" class="tool-card">
-                <div class="icon">🖼️</div>
-                <h2 class="tool-title">PDF to JPG</h2>
-                <p class="tool-desc">Extract all images contained in a PDF or convert each page to JPG.</p>
-            </a>
-
-            <!-- 6. Password Generator (기존에 만든 것 연결) -->
-            <a href="password-generator.html" class="tool-card">
-                <div class="icon">🔑</div>
-                <h2 class="tool-title">Password Generator</h2>
-                <p class="tool-desc">Create strong passwords instantly for your protected PDFs.</p>
-            </a>
-        </div>
+    <h2>PDF 자동 수평 맞춤 (NAPS2 스타일)</h2>
+    <div class="upload-box">
+        <input type="file" id="pdfInput" accept="application/pdf" />
+        <br/>
+        <button id="processBtn">업로드 및 변환 시작</button>
+        <div class="loader" id="loader"></div>
+        <div id="status">PDF 파일을 선택해주세요. (여러 장도 가능합니다)</div>
     </div>
 
-    <div class="trust-section">
-        <span>🔒 Secure & Private</span>
-        <p style="margin-top: 10px;">All processing is done in your browser. No files are uploaded to any server.</p>
-    </div>
+    <script>
+        document.getElementById('processBtn').addEventListener('click', async () => {
+            const fileInput = document.getElementById('pdfInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert("PDF 파일을 먼저 선택해주세요.");
+                return;
+            }
 
+            const statusEl = document.getElementById('status');
+            const loader = document.getElementById('loader');
+            const btn = document.getElementById('processBtn');
+
+            btn.disabled = true;
+            loader.style.display = 'block';
+            statusEl.innerText = "서버에서 변환 중입니다... (무료 서버라 첫 실행 시 1분 정도 걸릴 수 있습니다.)";
+            statusEl.style.color = "#475569"; // 기본 색상으로 복구
+
+            const formData = new FormData();
+            formData.append("file", file);
+
+            try {
+                // 회원님의 Render 서버 주소가 적용된 API URL입니다.
+                const apiUrl = 'https://pdf-backend-oylp.onrender.com/api/deskew'; 
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) throw new Error("서버 변환 실패");
+
+                // 결과물 다운로드
+                const blob = await response.blob();
+                const downloadUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = downloadUrl;
+                a.download = `수평보정됨_${file.name}`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(downloadUrl);
+
+                statusEl.innerText = "완료되었습니다! 파일이 다운로드 되었습니다.";
+                statusEl.style.color = "#16a34a"; // 성공 초록색
+            } catch (error) {
+                console.error(error);
+                statusEl.innerText = "오류가 발생했습니다. 서버가 아직 켜지는 중일 수 있으니 1분 뒤 다시 시도해보세요.";
+                statusEl.style.color = "#dc2626"; // 에러 빨간색
+            } finally {
+                btn.disabled = false;
+                loader.style.display = 'none';
+            }
+        });
+    </script>
 </body>
 </html>
