@@ -73,8 +73,8 @@
             transition: all 0.3s ease;
         }
         .workspace:hover {
-            border-color: #f43f5e; /* I Love PDF Red theme on hover */
-            background-color: #fff1f2; /* Light Red Pastel */
+            border-color: #f43f5e;
+            background-color: #fff1f2;
         }
 
         /* Custom File Input Styling */
@@ -83,7 +83,7 @@
         }
         .file-label {
             display: inline-block;
-            background-color: #e11d48; /* Premium Red */
+            background-color: #e11d48;
             color: white;
             font-size: 1.2rem;
             font-weight: 700;
@@ -108,9 +108,9 @@
         }
 
         .process-btn {
-            display: none; /* Hidden until file is selected */
+            display: none;
             margin-top: 20px;
-            background-color: #10b981; /* Green success color */
+            background-color: #10b981;
             color: white;
             font-size: 1.1rem;
             font-weight: bold;
@@ -188,7 +188,6 @@
         <p class="subtitle">Automatically straighten and level your scanned PDF documents.</p>
 
         <div class="workspace" id="dropZone">
-            <!-- File Input Label -->
             <label for="pdfInput" class="file-label">Select PDF file</label>
             <input type="file" id="pdfInput" accept="application/pdf" />
             
@@ -198,7 +197,6 @@
             <div class="loader" id="loader"></div>
             <div id="status"></div>
 
-            <!-- Security Message -->
             <div class="security-badge">
                 <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
                 Secure processing. Files are never stored on any server.
@@ -217,16 +215,14 @@
         const statusEl = document.getElementById('status');
         const loader = document.getElementById('loader');
 
-        // File Selection Logic
         fileInput.addEventListener('change', (e) => {
             if (e.target.files.length > 0) {
                 fileNameDisplay.innerText = "Selected: " + e.target.files[0].name;
-                processBtn.style.display = "inline-block"; // Show the process button
+                processBtn.style.display = "inline-block";
                 statusEl.innerText = "";
             }
         });
 
-        // Processing Logic
         processBtn.addEventListener('click', async () => {
             const file = fileInput.files[0];
             if (!file) return;
@@ -240,62 +236,21 @@
             formData.append("file", file);
 
             try {
-                // 회원님의 Render API 주소
+                // 백엔드 API 주소 (끝에 /api/deskew)
                 const apiUrl = 'https://pdf-backend-oylp.onrender.com/api/deskew'; 
 
+                // fetch 요청 시 mode: 'cors'를 명시하여 CORS 에러 우회 시도
                 const response = await fetch(apiUrl, {
                     method: 'POST',
+                    mode: 'cors',
                     body: formData
                 });
 
-                if (!response.ok) throw new Error("Server error");
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status}`);
+                }
 
                 const blob = await response.blob();
                 const downloadUrl = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
-                a.href = downloadUrl;
-                a.download = `straightened_${file.name}`;
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-                window.URL.revokeObjectURL(downloadUrl);
-
-                statusEl.innerText = "Success! Your document has been straightened.";
-                statusEl.style.color = "#10b981"; // Success Green
-                processBtn.style.display = "none"; // Hide button after success
-                fileNameDisplay.innerText = "Want to process another file?";
-            } catch (error) {
-                console.error(error);
-                statusEl.innerText = "An error occurred. The server might be asleep, please try again in 1 minute.";
-                statusEl.style.color = "#e11d48"; // Error Red
-            } finally {
-                processBtn.disabled = false;
-                loader.style.display = 'none';
-            }
-        });
-
-        // Simple Drag and Drop (Visual effect only for now)
-        const dropZone = document.getElementById('dropZone');
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-            dropZone.addEventListener(eventName, preventDefaults, false);
-        });
-        function preventDefaults(e) { e.preventDefault(); e.stopPropagation(); }
-        
-        ['dragenter', 'dragover'].forEach(eventName => {
-            dropZone.addEventListener(eventName, () => dropZone.style.backgroundColor = '#fff1f2', false);
-        });
-        ['dragleave', 'drop'].forEach(eventName => {
-            dropZone.addEventListener(eventName, () => dropZone.style.backgroundColor = '#ffffff', false);
-        });
-        
-        dropZone.addEventListener('drop', (e) => {
-            let dt = e.dataTransfer;
-            let files = dt.files;
-            if (files.length > 0 && files[0].type === "application/pdf") {
-                fileInput.files = files;
-                fileInput.dispatchEvent(new Event('change'));
-            }
-        });
-    </script>
-</body>
-</html>
+                a.
