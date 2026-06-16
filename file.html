@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Strong Password Generator</title>
+    <style>
+        /* CSS: 깔끔하고 모던한 파스텔 톤 디자인 */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            /* 파스텔 블루-퍼플 그라데이션 배경 */
+            background-image: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #333333;
+        }
+
+        .container {
+            background-color: #ffffff;
+            padding: 2.5rem;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 420px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 1.6rem;
+            margin-bottom: 0.5rem;
+            color: #2c3e50;
+        }
+
+        p.subtitle {
+            font-size: 0.9rem;
+            color: #7f8c8d;
+            margin-bottom: 2rem;
+        }
+
+        /* 비밀번호 출력부 & 복사 버튼 */
+        .output-group {
+            display: flex;
+            margin-bottom: 1.5rem;
+            background-color: #f4f7f9;
+            border: 2px solid #e1e8ed;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .output-group input {
+            flex-grow: 1;
+            border: none;
+            background: transparent;
+            padding: 1rem;
+            font-size: 1.2rem;
+            color: #2c3e50;
+            letter-spacing: 1px;
+            outline: none;
+            text-align: center;
+        }
+
+        .btn-copy {
+            background-color: #e1e8ed;
+            border: none;
+            padding: 0 1.2rem;
+            cursor: pointer;
+            font-weight: 600;
+            color: #34495e;
+            transition: background-color 0.2s ease;
+        }
+
+        .btn-copy:hover {
+            background-color: #d1d8dd;
+        }
+
+        /* 길이 조절 슬라이더 영역 */
+        .length-group {
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+
+        .length-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.8rem;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            accent-color: #8ec5fc; /* 슬라이더 파스텔 블루 포인트 */
+            cursor: pointer;
+        }
+
+        /* 상세 옵션 영역 */
+        .options-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 2rem;
+            text-align: left;
+        }
+
+        .option-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            width: 47%; /* 2열 배치 */
+            color: #555;
+        }
+
+        /* 생성 버튼 */
+        .btn-generate {
+            width: 100%;
+            padding: 1rem;
+            /* 버튼 파스텔 그라데이션 */
+            background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(161, 140, 209, 0.4);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .btn-generate:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(161, 140, 209, 0.6);
+        }
+
+        .btn-generate:active {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Password Generator</h1>
+    <p class="subtitle">Create strong & secure passwords</p>
+
+    <!-- 비밀번호 출력 및 복사 -->
+    <div class="output-group">
+        <input type="text" id="password-output" readonly placeholder="Click Generate">
+        <button class="btn-copy" id="btn-copy">Copy</button>
+    </div>
+
+    <!-- 길이 설정 (8 ~ 32) -->
+    <div class="length-group">
+        <div class="length-header">
+            <label for="length-slider">Password Length</label>
+            <span id="length-value">16</span>
+        </div>
+        <input type="range" id="length-slider" min="8" max="32" value="16">
+    </div>
+
+    <!-- 조합 옵션 -->
+    <div class="options-group">
+        <label class="option-label"><input type="checkbox" id="opt-upper" checked> Uppercase</label>
+        <label class="option-label"><input type="checkbox" id="opt-lower" checked> Lowercase</label>
+        <label class="option-label"><input type="checkbox" id="opt-numbers" checked> Numbers</label>
+        <label class="option-label"><input type="checkbox" id="opt-symbols" checked> Symbols</label>
+    </div>
+
+    <!-- 생성 버튼 -->
+    <button class="btn-generate" id="btn-generate">Generate Password</button>
+</div>
+
+<script>
+    // JavaScript: 기능 구현부
+    const lengthSlider = document.getElementById('length-slider');
+    const lengthValue = document.getElementById('length-value');
+    const passwordOutput = document.getElementById('password-output');
+    const btnCopy = document.getElementById('btn-copy');
+    const btnGenerate = document.getElementById('btn-generate');
+
+    const optUpper = document.getElementById('opt-upper');
+    const optLower = document.getElementById('opt-lower');
+    const optNumbers = document.getElementById('opt-numbers');
+    const optSymbols = document.getElementById('opt-symbols');
+
+    // 사용될 문자열 셋
+    const upperChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const lowerChars = 'abcdefghijklmnopqrstuvwxyz';
+    const numberChars = '0123456789';
+    const symbolChars = '!@#$%^&*()_+~`|}{[]:;?><,./-=';
+
+    // 슬라이더 바를 움직일 때 숫자(길이) 실시간 변경
+    lengthSlider.addEventListener('input', (e) => {
+        lengthValue.textContent = e.target.value;
+    });
+
+    // 비밀번호 생성 로직
+    function generatePassword() {
+        const length = parseInt(lengthSlider.value);
+        let charPool = '';
+        let password = '';
+
+        // 체크된 옵션에 따라 문자 풀(pool) 구성
+        if (optUpper.checked) charPool += upperChars;
+        if (optLower.checked) charPool += lowerChars;
+        if (optNumbers.checked) charPool += numberChars;
+        if (optSymbols.checked) charPool += symbolChars;
+
+        // 아무 옵션도 체크하지 않았을 경우의 예외 처리
+        if (charPool === '') {
+            passwordOutput.value = 'Select an option!';
+            return;
+        }
+
+        // 지정된 길이만큼 랜덤하게 문자 추출
+        for (let i = 0; i < length; i++) {
+            const randomIndex = Math.floor(Math.random() * charPool.length);
+            password += charPool[randomIndex];
+        }
+
+        // 결과값 화면에 표시
+        passwordOutput.value = password;
+        
+        // 새로 생성 시 복사 버튼 텍스트 초기화
+        btnCopy.textContent = 'Copy';
+    }
+
+    // 복사 버튼 기능 로직 (클립보드 API 사용)
+    btnCopy.addEventListener('click', () => {
+        if (!passwordOutput.value || passwordOutput.value === 'Select an option!') return;
+
+        navigator.clipboard.writeText(passwordOutput.value).then(() => {
+            btnCopy.textContent = 'Copied!';
+            // 2초 뒤 다시 'Copy'로 원복
+            setTimeout(() => {
+                btnCopy.textContent = 'Copy';
+            }, 2000);
+        }).catch(err => {
+            console.error('Failed to copy text: ', err);
+            alert('Failed to copy');
+        });
+    });
+
+    // 버튼 클릭 이벤트 리스너 등록
+    btnGenerate.addEventListener('click', generatePassword);
+
+    // 페이지 접속 시 초기 비밀번호 1회 자동 생성
+    generatePassword(); 
+</script>
+
+</body>
+</html>
