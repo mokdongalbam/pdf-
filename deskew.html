@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Auto Deskew PDF - Automatically straighten scanned pages</title>
+    <title>Deskew PDF - Advanced Straightening</title>
     <!-- pdf-lib (수정 및 저장용) -->
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <!-- pdf.js (페이지 렌더링용) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
-
+    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
@@ -19,40 +19,55 @@
         nav { padding: 20px; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
         nav a { text-decoration: none; color: var(--text-main); font-weight: 600; }
         
-        .container { max-width: 800px; margin: 50px auto; padding: 20px; text-align: center; }
+        .container { max-width: 900px; margin: 40px auto; padding: 20px; text-align: center; }
         h1 { font-size: 2.5rem; margin-bottom: 10px; }
         p.desc { color: #64748b; font-size: 1.1rem; margin-bottom: 30px; }
 
-        /* 업로드 영역 수정 */
+        /* 드래그 영역 완벽 통합 (입력창 투명 처리) */
         .upload-area { 
             border: 3px dashed #cbd5e1; border-radius: 20px; padding: 60px 20px; 
             background: white; transition: 0.3s; position: relative;
         }
         .upload-area:hover, .upload-area.dragover { border-color: var(--primary); background: #f0f9ff; }
         
-        /* 파일 인풋을 투명하게 덮어버림 (클릭과 드래그 모두 해결하는 최고 방법) */
         .upload-area input[type="file"] {
             position: absolute; width: 100%; height: 100%; top: 0; left: 0; 
             opacity: 0; cursor: pointer; z-index: 10;
         }
-        
+
         .btn-select { 
             background-color: var(--primary); color: white; padding: 15px 30px; 
             border-radius: 12px; border: none; font-size: 1.2rem; font-weight: 600; 
-            margin-top: 20px; display: inline-block; pointer-events: none; /* 클릭 방해 금지 */
+            margin-top: 20px; display: inline-block; pointer-events: none;
         }
-
-        #process-area { display: none; background: white; padding: 40px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-top: 30px; }
-        .file-info { font-size: 1.2rem; font-weight: 600; margin-bottom: 20px; color: var(--primary); }
         
-        .progress-container { width: 100%; background-color: #e2e8f0; border-radius: 10px; height: 12px; overflow: hidden; margin-bottom: 15px; }
-        #progress-bar { height: 100%; background-color: var(--primary); width: 0%; transition: width 0.3s; }
-        #status-text { font-weight: 600; color: #475569; }
+        #workspace { display: none; background: white; padding: 30px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .controls { display: flex; align-items: center; justify-content: center; gap: 20px; margin-bottom: 20px; background: #f1f5f9; padding: 20px; border-radius: 12px; }
+        input[type="range"] { width: 300px; accent-color: var(--primary); }
+        .angle-display { font-size: 1.5rem; font-weight: 700; color: var(--primary); width: 80px; text-align: left; }
 
-        #auto-deskew-btn { background-color: var(--primary); color: white; width: 100%; padding: 18px; border: none; border-radius: 12px; font-size: 1.2rem; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(56, 189, 248, 0.4); transition: 0.3s; }
-        #auto-deskew-btn:hover { background-color: var(--primary-hover); }
+        .preview-container {
+            position: relative; margin: 0 auto 30px; max-width: 600px; height: 600px;
+            background-color: #e2e8f0; border: 1px solid #cbd5e1; overflow: hidden;
+            display: flex; justify-content: center; align-items: center;
+        }
+        #pdf-preview { transition: transform 0.1s linear; max-width: 100%; max-height: 100%; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
         
-        #result-log { margin-top: 20px; text-align: left; background: #f8fafc; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 0.9rem; max-height: 200px; overflow-y: auto; display: none; border: 1px solid #e2e8f0; }
+        .grid-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;
+            background-image: 
+                linear-gradient(to right, rgba(56, 189, 248, 0.4) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(56, 189, 248, 0.4) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+        .grid-overlay::before { content: ''; position: absolute; top: 50%; left: 0; width: 100%; height: 2px; background: red; }
+
+        #save-btn {
+            background-color: var(--primary); color: white; width: 100%; padding: 18px;
+            border: none; border-radius: 12px; font-size: 1.2rem; font-weight: bold; cursor: pointer;
+        }
+        #save-btn:hover { background-color: var(--primary-hover); }
+        #loading { display: none; margin-top: 20px; font-weight: bold; color: var(--primary); }
     </style>
 </head>
 <body>
@@ -60,171 +75,153 @@
     <nav><a href="index.html">← Back to Home</a></nav>
 
     <div class="container">
-        <h1>Auto Deskew PDF</h1>
-        <p class="desc">Our AI algorithm detects and straightens every crooked page automatically.</p>
+        <h1>Advanced Deskew</h1>
+        <p class="desc">Fix crooked scans without cropping the edges.</p>
 
-        <!-- 드래그 & 클릭 영역 완벽 통합 -->
         <div class="upload-area" id="drop-zone">
             <input type="file" id="file-input" accept="application/pdf">
-            <svg style="width:64px;height:64px;color:#cbd5e1;margin-bottom:15px;pointer-events:none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-            <h2 style="pointer-events:none">Select Scanned PDF</h2>
+            <svg style="width:64px;height:64px;color:#cbd5e1;margin-bottom:15px;pointer-events:none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
+            <h2 style="pointer-events:none">Select PDF file</h2>
             <div class="btn-select">Select PDF</div>
         </div>
 
-        <div id="process-area">
-            <div class="file-info" id="file-name-display">Selected: -</div>
-            <button id="auto-deskew-btn">Start Auto-Deskew</button>
-
-            <div id="loading-section" style="display: none; margin-top: 20px;">
-                <div class="progress-container"><div id="progress-bar"></div></div>
-                <div id="status-text">Analyzing pages...</div>
-                <div id="result-log"></div>
+        <div id="workspace">
+            <div class="controls">
+                <span style="font-weight: 600;">Adjust Angle:</span>
+                <input type="range" id="angle-slider" min="-15" max="15" step="0.1" value="0">
+                <span class="angle-display" id="angle-display">0.0°</span>
             </div>
+
+            <div class="preview-container">
+                <canvas id="pdf-preview"></canvas>
+                <div class="grid-overlay"></div>
+            </div>
+
+            <button id="save-btn">Apply to All Pages & Download</button>
+            <div id="loading">Calculating new bounds and applying rotation...</div>
         </div>
     </div>
 
     <script>
         const fileInput = document.getElementById('file-input');
         const dropZone = document.getElementById('drop-zone');
-        const processArea = document.getElementById('process-area');
-        const fileNameDisplay = document.getElementById('file-name-display');
-        const autoDeskewBtn = document.getElementById('auto-deskew-btn');
-        const loadingSection = document.getElementById('loading-section');
-        const progressBar = document.getElementById('progress-bar');
-        const statusText = document.getElementById('status-text');
-        const resultLog = document.getElementById('result-log');
+        const workspace = document.getElementById('workspace');
+        const canvas = document.getElementById('pdf-preview');
+        const ctx = canvas.getContext('2d');
+        const angleSlider = document.getElementById('angle-slider');
+        const angleDisplay = document.getElementById('angle-display');
+        const saveBtn = document.getElementById('save-btn');
+        const loading = document.getElementById('loading');
 
         let loadedFile = null;
 
-        // 파일 업로드 처리 함수 통합
+        // 파일 처리 통합
         function handleFile(files) {
             if (files.length > 0) {
-                const file = files[0];
-                if (file.type !== "application/pdf") return alert("Please select a PDF file.");
+                loadedFile = files[0];
+                if (loadedFile.type !== "application/pdf") return alert("Please select a PDF file.");
                 
-                loadedFile = file;
                 dropZone.style.display = 'none';
-                processArea.style.display = 'block';
-                fileNameDisplay.textContent = `Selected: ${file.name}`;
+                workspace.style.display = 'block';
+                renderPreview();
             }
         }
 
-        // 1. 클릭으로 파일 선택 시
+        // 클릭 업로드
         fileInput.addEventListener('change', (e) => {
             handleFile(e.target.files);
         });
 
-        // 2. 드래그 앤 드롭 시
+        // 드래그 업로드 이벤트 처리
         dropZone.addEventListener('dragover', (e) => { 
             e.preventDefault(); 
             dropZone.classList.add('dragover'); 
         });
-        
         dropZone.addEventListener('dragleave', (e) => { 
             e.preventDefault(); 
             dropZone.classList.remove('dragover'); 
         });
-        
         dropZone.addEventListener('drop', (e) => {
             e.preventDefault(); 
             dropZone.classList.remove('dragover');
-            
-            // 파일 덮어쓰기 및 트리거 발생
             fileInput.files = e.dataTransfer.files;
             handleFile(e.dataTransfer.files);
         });
 
-        // ==========================================
-        // 이하 Auto Deskew 분석 및 회전 알고리즘 (동일)
-        // ==========================================
-
-        function detectSkewAngle(imageData, width, height) {
-            const scale = 0.5;
-            const w = Math.floor(width * scale);
-            const h = Math.floor(height * scale);
-            
-            const pixels = new Uint8Array(w * h);
-            for (let y = 0; y < h; y++) {
-                for (let x = 0; x < w; x++) {
-                    const idx = (Math.floor(y / scale) * width + Math.floor(x / scale)) * 4;
-                    const gray = (imageData[idx] + imageData[idx+1] + imageData[idx+2]) / 3;
-                    pixels[y * w + x] = gray < 128 ? 1 : 0;
-                }
+        // 미리보기 렌더링
+        async function renderPreview() {
+            try {
+                const arrayBuffer = await loadedFile.arrayBuffer();
+                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                const page = await pdf.getPage(1);
+                const viewport = page.getViewport({ scale: 1.0 }); 
+                canvas.width = viewport.width; canvas.height = viewport.height;
+                await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+            } catch (error) {
+                console.error("Preview error:", error);
+                alert("Failed to render PDF preview.");
             }
-
-            let bestAngle = 0;
-            let maxVariance = 0;
-
-            for (let angle = -10; angle <= 10; angle += 0.5) {
-                const theta = angle * Math.PI / 180;
-                const cosT = Math.cos(theta);
-                const sinT = Math.sin(theta);
-                const profile = new Int32Array(h);
-
-                for (let y = 0; y < h; y++) {
-                    for (let x = 0; x < w; x++) {
-                        if (pixels[y * w + x]) {
-                            const newY = Math.floor((x - w/2) * sinT + (y - h/2) * cosT + h/2);
-                            if (newY >= 0 && newY < h) {
-                                profile[newY]++;
-                            }
-                        }
-                    }
-                }
-
-                let sum = 0, sqSum = 0;
-                for (let i = 0; i < h; i++) {
-                    sum += profile[i];
-                    sqSum += profile[i] * profile[i];
-                }
-                const mean = sum / h;
-                const variance = (sqSum / h) - (mean * mean);
-
-                if (variance > maxVariance) {
-                    maxVariance = variance;
-                    bestAngle = angle;
-                }
-            }
-            return maxVariance > 10 ? -bestAngle : 0; 
         }
 
-        function logInfo(msg) {
-            resultLog.innerHTML += `<div>${msg}</div>`;
-            resultLog.scrollTop = resultLog.scrollHeight;
-        }
+        // 각도 슬라이더 변경
+        angleSlider.addEventListener('input', (e) => {
+            const angle = parseFloat(e.target.value);
+            angleDisplay.textContent = (angle > 0 ? '+' : '') + angle.toFixed(1) + '°';
+            canvas.style.transform = `rotate(${angle}deg)`;
+        });
 
-        autoDeskewBtn.addEventListener('click', async () => {
-            autoDeskewBtn.style.display = 'none';
-            loadingSection.style.display = 'block';
-            resultLog.style.display = 'block';
-            resultLog.innerHTML = "";
-            logInfo("Starting auto-deskew process...");
+        // 회전 및 다운로드 적용
+        saveBtn.addEventListener('click', async () => {
+            const selectedAngle = parseFloat(angleSlider.value);
+            if(selectedAngle === 0) return alert("Angle is 0. No rotation needed.");
+
+            saveBtn.style.display = 'none';
+            loading.style.display = 'block';
 
             try {
                 const arrayBuffer = await loadedFile.arrayBuffer();
-                
-                const pdfPreview = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-                const totalPages = pdfPreview.numPages;
-                
                 const originalPdf = await PDFLib.PDFDocument.load(arrayBuffer);
                 const newPdf = await PDFLib.PDFDocument.create();
-                const pagesToEdit = originalPdf.getPages();
+                const pages = originalPdf.getPages();
 
-                for (let i = 1; i <= totalPages; i++) {
-                    const percent = Math.round(((i - 1) / totalPages) * 100);
-                    progressBar.style.width = `${percent}%`;
-                    statusText.textContent = `Analyzing page ${i} of ${totalPages}...`;
-                    
-                    const page = await pdfPreview.getPage(i);
-                    const viewport = page.getViewport({ scale: 1.0 }); 
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
-                    canvas.width = viewport.width; canvas.height = viewport.height;
-                    
-                    await page.render({ canvasContext: ctx, viewport: viewport }).promise;
-                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-                    
-                    const detectedAngle = detectSkewAngle(imageData, canvas.width, canvas.height);
-                    logInfo(`Page ${i}: Detected skew angle = ${detectedAngle}°`);
+                // 모서리 잘림 방지를 위한 Bounding Box 확장 공식
+                const theta = selectedAngle * (Math.PI / 180); 
+                const cosT = Math.abs(Math.cos(theta));
+                const sinT = Math.abs(Math.sin(theta));
 
-                    const embeddedPage =
+                for (let i = 0; i < pages.length; i++) {
+                    const embeddedPage = await newPdf.embedPage(pages[i]);
+                    const { width: origW, height: origH } = embeddedPage.scale(1);
+                    
+                    const newWidth = origW * cosT + origH * sinT;
+                    const newHeight = origW * sinT + origH * cosT;
+                    
+                    const newPage = newPdf.addPage([newWidth, newHeight]);
+
+                    newPage.drawPage(embeddedPage, {
+                        x: newWidth / 2,
+                        y: newHeight / 2,
+                        xOrigin: 0.5, 
+                        yOrigin: 0.5, 
+                        rotate: PDFLib.degrees(selectedAngle),
+                    });
+                }
+
+                const pdfBytes = await newPdf.save();
+                const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `deskewed_${loadedFile.name}`;
+                link.click();
+
+            } catch (error) {
+                console.error("Save error:", error);
+                alert("Error during deskew process. " + error.message);
+            } finally {
+                saveBtn.style.display = 'block';
+                loading.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
