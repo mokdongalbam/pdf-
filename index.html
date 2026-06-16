@@ -3,259 +3,191 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Strong Password Generator</title>
+    <title>PDF Tools - Edit & Convert PDFs Online Free</title>
     <style>
-        /* CSS: 깔끔하고 모던한 파스텔 톤 디자인 */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+        :root {
+            --bg-color: #f8fafc;
+            --primary: #8b5cf6; /* Pastel Purple */
+            --primary-hover: #7c3aed;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            
+            /* Tool Card Colors */
+            --color-merge: #fb7185;
+            --color-split: #f472b6;
+            --color-deskew: #38bdf8;
+            --color-protect: #34d399;
+            --color-convert: #fbbf24;
+            --color-watermark: #818cf8;
+        }
+
         * {
-            box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
         }
 
         body {
-            /* 파스텔 블루-퍼플 그라데이션 배경 */
-            background-image: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: #333333;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
         }
 
+        /* Header / Hero Section */
+        header {
+            background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+            padding: 80px 20px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            color: #1e293b;
+            margin-bottom: 16px;
+        }
+
+        header p {
+            font-size: 1.25rem;
+            color: #334155;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Grid Section */
         .container {
-            background-color: #ffffff;
-            padding: 2.5rem;
-            border-radius: 20px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
-            width: 90%;
-            max-width: 420px;
-            text-align: center;
+            max-width: 1200px;
+            margin: -40px auto 40px auto;
+            padding: 0 20px;
         }
 
-        h1 {
-            font-size: 1.6rem;
-            margin-bottom: 0.5rem;
-            color: #2c3e50;
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 24px;
         }
 
-        p.subtitle {
-            font-size: 0.9rem;
-            color: #7f8c8d;
-            margin-bottom: 2rem;
-        }
-
-        /* 비밀번호 출력부 & 복사 버튼 */
-        .output-group {
+        /* Tool Card Design */
+        .tool-card {
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            padding: 30px 24px;
+            text-decoration: none;
+            color: inherit;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
             display: flex;
-            margin-bottom: 1.5rem;
-            background-color: #f4f7f9;
-            border: 2px solid #e1e8ed;
-            border-radius: 12px;
-            overflow: hidden;
+            flex-direction: column;
+            border-top: 5px solid #ccc;
         }
 
-        .output-group input {
-            flex-grow: 1;
-            border: none;
-            background: transparent;
-            padding: 1rem;
-            font-size: 1.2rem;
-            color: #2c3e50;
-            letter-spacing: 1px;
-            outline: none;
-            text-align: center;
+        .tool-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
         }
 
-        .btn-copy {
-            background-color: #e1e8ed;
-            border: none;
-            padding: 0 1.2rem;
-            cursor: pointer;
-            font-weight: 600;
-            color: #34495e;
-            transition: background-color 0.2s ease;
+        .tool-card:nth-child(1) { border-color: var(--color-merge); }
+        .tool-card:nth-child(2) { border-color: var(--color-split); }
+        .tool-card:nth-child(3) { border-color: var(--color-deskew); }
+        .tool-card:nth-child(4) { border-color: var(--color-protect); }
+        .tool-card:nth-child(5) { border-color: var(--color-convert); }
+        .tool-card:nth-child(6) { border-color: var(--color-watermark); }
+
+        .icon {
+            font-size: 2.5rem;
+            margin-bottom: 16px;
         }
 
-        .btn-copy:hover {
-            background-color: #d1d8dd;
+        .tool-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 8px;
         }
 
-        /* 길이 조절 슬라이더 영역 */
-        .length-group {
-            margin-bottom: 1.5rem;
-            text-align: left;
-        }
-
-        .length-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 0.8rem;
-            font-weight: 600;
+        .tool-desc {
+            color: var(--text-muted);
             font-size: 0.95rem;
+            line-height: 1.5;
         }
 
-        input[type="range"] {
-            width: 100%;
-            accent-color: #8ec5fc; /* 슬라이더 파스텔 블루 포인트 */
-            cursor: pointer;
-        }
-
-        /* 상세 옵션 영역 */
-        .options-group {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            margin-bottom: 2rem;
-            text-align: left;
-        }
-
-        .option-label {
-            display: flex;
-            align-items: center;
-            gap: 6px;
+        /* Trust Badge Section */
+        .trust-section {
+            text-align: center;
+            padding: 40px 20px 60px;
+            color: var(--text-muted);
             font-size: 0.9rem;
-            cursor: pointer;
-            width: 47%; /* 2열 배치 */
-            color: #555;
         }
-
-        /* 생성 버튼 */
-        .btn-generate {
-            width: 100%;
-            padding: 1rem;
-            /* 버튼 파스텔 그라데이션 */
-            background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);
-            border: none;
-            border-radius: 12px;
-            color: white;
-            font-size: 1.1rem;
-            font-weight: bold;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(161, 140, 209, 0.4);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-
-        .btn-generate:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(161, 140, 209, 0.6);
-        }
-
-        .btn-generate:active {
-            transform: translateY(0);
+        
+        .trust-section span {
+            display: inline-block;
+            background-color: #e2e8f0;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: 600;
         }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>Password Generator</h1>
-    <p class="subtitle">Create strong & secure passwords</p>
+    <header>
+        <h1>Every tool you need to work with PDFs</h1>
+        <p>100% Free, Secure, and Client-side processing. Your files never leave your device.</p>
+    </header>
 
-    <!-- 비밀번호 출력 및 복사 -->
-    <div class="output-group">
-        <input type="text" id="password-output" readonly placeholder="Click Generate">
-        <button class="btn-copy" id="btn-copy">Copy</button>
-    </div>
+    <div class="container">
+        <div class="tools-grid">
+            <!-- 1. Merge PDF -->
+            <a href="merge.html" class="tool-card">
+                <div class="icon">📑</div>
+                <h2 class="tool-title">Merge PDF</h2>
+                <p class="tool-desc">Combine multiple PDFs and images into a single document.</p>
+            </a>
 
-    <!-- 길이 설정 (8 ~ 32) -->
-    <div class="length-group">
-        <div class="length-header">
-            <label for="length-slider">Password Length</label>
-            <span id="length-value">16</span>
+            <!-- 2. Split PDF -->
+            <a href="split.html" class="tool-card">
+                <div class="icon">✂️</div>
+                <h2 class="tool-title">Split PDF</h2>
+                <p class="tool-desc">Separate one page or a whole set for easy conversion.</p>
+            </a>
+
+            <!-- 3. Deskew (수평/수직 맞추기) -->
+            <a href="deskew.html" class="tool-card">
+                <div class="icon">📐</div>
+                <h2 class="tool-title">Deskew Scans</h2>
+                <p class="tool-desc">Automatically straighten and align scanned PDF pages.</p>
+            </a>
+
+            <!-- 4. Protect PDF -->
+            <a href="protect.html" class="tool-card">
+                <div class="icon">🔒</div>
+                <h2 class="tool-title">Protect PDF</h2>
+                <p class="tool-desc">Encrypt your PDF with a password to prevent unauthorized access.</p>
+            </a>
+
+            <!-- 5. PDF to Image -->
+            <a href="to-image.html" class="tool-card">
+                <div class="icon">🖼️</div>
+                <h2 class="tool-title">PDF to JPG</h2>
+                <p class="tool-desc">Extract all images contained in a PDF or convert each page to JPG.</p>
+            </a>
+
+            <!-- 6. Password Generator (기존에 만든 것 연결) -->
+            <a href="password-generator.html" class="tool-card">
+                <div class="icon">🔑</div>
+                <h2 class="tool-title">Password Generator</h2>
+                <p class="tool-desc">Create strong passwords instantly for your protected PDFs.</p>
+            </a>
         </div>
-        <input type="range" id="length-slider" min="8" max="32" value="16">
     </div>
 
-    <!-- 조합 옵션 -->
-    <div class="options-group">
-        <label class="option-label"><input type="checkbox" id="opt-upper" checked> Uppercase</label>
-        <label class="option-label"><input type="checkbox" id="opt-lower" checked> Lowercase</label>
-        <label class="option-label"><input type="checkbox" id="opt-numbers" checked> Numbers</label>
-        <label class="option-label"><input type="checkbox" id="opt-symbols" checked> Symbols</label>
+    <div class="trust-section">
+        <span>🔒 Secure & Private</span>
+        <p style="margin-top: 10px;">All processing is done in your browser. No files are uploaded to any server.</p>
     </div>
-
-    <!-- 생성 버튼 -->
-    <button class="btn-generate" id="btn-generate">Generate Password</button>
-</div>
-
-<script>
-    // JavaScript: 기능 구현부
-    const lengthSlider = document.getElementById('length-slider');
-    const lengthValue = document.getElementById('length-value');
-    const passwordOutput = document.getElementById('password-output');
-    const btnCopy = document.getElementById('btn-copy');
-    const btnGenerate = document.getElementById('btn-generate');
-
-    const optUpper = document.getElementById('opt-upper');
-    const optLower = document.getElementById('opt-lower');
-    const optNumbers = document.getElementById('opt-numbers');
-    const optSymbols = document.getElementById('opt-symbols');
-
-    // 사용될 문자열 셋
-    const upperChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    const lowerChars = 'abcdefghijklmnopqrstuvwxyz';
-    const numberChars = '0123456789';
-    const symbolChars = '!@#$%^&*()_+~`|}{[]:;?><,./-=';
-
-    // 슬라이더 바를 움직일 때 숫자(길이) 실시간 변경
-    lengthSlider.addEventListener('input', (e) => {
-        lengthValue.textContent = e.target.value;
-    });
-
-    // 비밀번호 생성 로직
-    function generatePassword() {
-        const length = parseInt(lengthSlider.value);
-        let charPool = '';
-        let password = '';
-
-        // 체크된 옵션에 따라 문자 풀(pool) 구성
-        if (optUpper.checked) charPool += upperChars;
-        if (optLower.checked) charPool += lowerChars;
-        if (optNumbers.checked) charPool += numberChars;
-        if (optSymbols.checked) charPool += symbolChars;
-
-        // 아무 옵션도 체크하지 않았을 경우의 예외 처리
-        if (charPool === '') {
-            passwordOutput.value = 'Select an option!';
-            return;
-        }
-
-        // 지정된 길이만큼 랜덤하게 문자 추출
-        for (let i = 0; i < length; i++) {
-            const randomIndex = Math.floor(Math.random() * charPool.length);
-            password += charPool[randomIndex];
-        }
-
-        // 결과값 화면에 표시
-        passwordOutput.value = password;
-        
-        // 새로 생성 시 복사 버튼 텍스트 초기화
-        btnCopy.textContent = 'Copy';
-    }
-
-    // 복사 버튼 기능 로직 (클립보드 API 사용)
-    btnCopy.addEventListener('click', () => {
-        if (!passwordOutput.value || passwordOutput.value === 'Select an option!') return;
-
-        navigator.clipboard.writeText(passwordOutput.value).then(() => {
-            btnCopy.textContent = 'Copied!';
-            // 2초 뒤 다시 'Copy'로 원복
-            setTimeout(() => {
-                btnCopy.textContent = 'Copy';
-            }, 2000);
-        }).catch(err => {
-            console.error('Failed to copy text: ', err);
-            alert('Failed to copy');
-        });
-    });
-
-    // 버튼 클릭 이벤트 리스너 등록
-    btnGenerate.addEventListener('click', generatePassword);
-
-    // 페이지 접속 시 초기 비밀번호 1회 자동 생성
-    generatePassword(); 
-</script>
 
 </body>
 </html>
