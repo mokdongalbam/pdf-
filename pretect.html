@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Protect PDF - Encrypt your PDF with a password online</title>
+    <!-- pdf-lib 라이브러리 -->
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        :root {
+            --primary: #34d399; /* Protect PDF 컬러 (에메랄드 그린) */
+            --primary-hover: #10b981;
+            --bg-color: #f8fafc;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+
+        body { background-color: var(--bg-color); color: var(--text-main); }
+
+        nav { padding: 20px; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        nav a { text-decoration: none; color: var(--text-main); font-weight: 600; font-size: 18px; }
+
+        .container { max-width: 800px; margin: 50px auto; padding: 20px; text-align: center; }
+
+        h1 { font-size: 2.5rem; margin-bottom: 10px; color: var(--text-main); }
+        p.desc { color: var(--text-muted); font-size: 1.1rem; margin-bottom: 40px; }
+
+        .upload-area {
+            border: 3px dashed #cbd5e1; border-radius: 20px; padding: 60px 20px;
+            background-color: white; cursor: pointer; transition: all 0.3s; position: relative;
+        }
+
+        .upload-area:hover, .upload-area.dragover { border-color: var(--primary); background-color: #ecfdf5; }
+        .upload-area input[type="file"] { position: absolute; width: 100%; height: 100%; top: 0; left: 0; opacity: 0; cursor: pointer; }
+
+        .btn-select {
+            background-color: var(--primary); color: white; padding: 15px 30px;
+            border-radius: 12px; border: none; font-size: 1.2rem; font-weight: 600;
+            margin-top: 20px; cursor: pointer; display: inline-block;
+        }
+
+        /* 비밀번호 입력 영역 */
+        #protect-options {
+            margin-top: 30px; background: white; padding: 30px;
+            border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            display: none; text-align: left;
+        }
+
+        .file-info { font-weight: 600; color: var(--primary); margin-bottom: 20px; font-size: 1.1rem; }
+
+        .input-group { margin-bottom: 20px; }
+        .input-group label { display: block; font-weight: 600; margin-bottom: 8px; }
+        .input-group input {
+            width: 100%; padding: 15px; border: 2px solid #e2e8f0;
+            border-radius: 8px; font-size: 1.2rem; outline: none; transition: 0.3s;
+            font-family: monospace; letter-spacing: 2px;
+        }
+        .input-group input:focus { border-color: var(--primary); }
+
+        .need-password-link {
+            display: block; text-align: right; margin-top: 10px; font-size: 0.9rem;
+            color: #8b5cf6; text-decoration: none; font-weight: 500;
+        }
+        .need-password-link:hover { text-decoration: underline; }
+
+        #protect-btn {
+            background-color: var(--primary); color: white; width: 100%;
+            padding: 18px; border: none; border-radius: 12px; font-size: 1.2rem;
+            font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(52, 211, 153, 0.4);
+            transition: 0.3s; margin-top: 15px;
+        }
+        #protect-btn:hover { background-color: var(--primary-hover); }
+
+        #loading { display: none; margin-top: 20px; font-weight: bold; color: var(--primary); text-align: center; }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <a href="index.html">← Back to Home</a>
+    </nav>
+
+    <div class="container">
+        <h1>Protect PDF</h1>
+        <p class="desc">Encrypt your PDF with a password to prevent unauthorized access.</p>
+
+        <!-- 파일 업로드 -->
+        <div class="upload-area" id="drop-zone">
+            <input type="file" id="file-input" accept="application/pdf">
+            <svg style="width:64px;height:64px;color:#cbd5e1;margin-bottom:15px" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8V7z"></path></svg>
+            <h2>Select PDF file</h2>
+            <p style="color: #94a3b8; margin-top: 5px;">or drop PDF here</p>
+            <div class="btn-select">Select PDF</div>
+        </div>
+
+        <!-- 비밀번호 설정 영역 -->
+        <div id="protect-options">
+            <div class="file-info" id="file-info">Selected: -</div>
+            
+            <div class="input-group">
+                <label for="password-input">Type a password to encrypt this PDF</label>
+                <input type="password" id="password-input" placeholder="Enter secure password">
+                <a href="password-generator.html" target="_blank" class="need-password-link">Need a strong password? Try our Generator →</a>
+            </div>
+
+            <button id="protect-btn">Protect PDF!</button>
+            <div id="loading">Encrypting PDF... Please wait.</div>
+        </div>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('file-input');
+        const dropZone = document.getElementById('drop-zone');
+        const protectOptions = document.getElementById('protect-options');
+        const fileInfo = document.getElementById('file-info');
+        const protectBtn = document.getElementById('protect-btn');
+        const passwordInput = document.getElementById('password-input');
+        const loading = document.getElementById('loading');
+
+        let loadedPdfBytes = null;
+        let originalFileName = "";
+
+        // 파일 업로드 시
+        fileInput.addEventListener('change', async (e) => {
+            if (e.target.files.length > 0) {
+                const file = e.target.files[0];
+                if (file.type !== "application/pdf") return alert("Please select a PDF file.");
+                
+                originalFileName = file.name;
+                fileInfo.textContent = `Selected: ${originalFileName}`;
+                
+                // 파일을 메모리에 로드
+                const arrayBuffer = await file.arrayBuffer();
+                loadedPdfBytes = new Uint8Array(arrayBuffer); // pdf-lib 암호화는 Uint8Array 요구함
+                
+                dropZone.style.display = 'none';
+                protectOptions.style.display = 'block';
+                passwordInput.focus(); // 비밀번호 칸에 자동 커서
+            }
+        });
+
+        // 암호화 버튼 클릭 시
+        protectBtn.addEventListener('click', async () => {
+            const password = passwordInput.value;
+            if (!password) return alert("Please enter a password.");
+
+            protectBtn.style.display = 'none';
+            loading.style.display = 'block';
+
+            try {
+                // PDF 로드
+                const pdfDoc = await PDFLib.PDFDocument.load(loadedPdfBytes);
+
+                // 비밀번호 걸기 (User password 설정 시 열 때 비밀번호 요구)
+                const pdfBytes = await pdfDoc.save({
+                    useObjectStreams: false,
+                    userPassword: password,   // 문서를 열 때 필요한 비밀번호
+                    ownerPassword: password,  // 권한(인쇄, 수정 등)을 제한하는 비밀번호 (동일하게 설정)
+                    permissions: {
+                        printing: 'highResolution',
+                        modifying: false,
+                        copying: false,
+                    },
+                });
+
+                // 다운로드
+                const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `protected_${originalFileName}`;
+                link.click();
+
+            } catch (error) {
+                console.error(error);
+                alert("An error occurred while protecting the PDF. It might be already encrypted.");
+            } finally {
+                protectBtn.style.display = 'block';
+                loading.style.display = 'none';
+            }
+        });
+
+        // 드래그 앤 드롭
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault(); dropZone.classList.remove('dragover');
+            fileInput.files = e.dataTransfer.files;
+            fileInput.dispatchEvent(new Event('change'));
+        });
+    </script>
+</body>
+</html>
